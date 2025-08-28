@@ -1,18 +1,73 @@
-@import url("..components/card.css");
-@import url("..components/feature.css");
-@import url("..components/rive.css");
-
-#gallery-container {
-  overflow: hidden;
-  width: 100%;
-  height: 100vh;
+header {
+  background: #111;
+  color: #fff;
+  padding: 15px 20px;
+  text-align: center;
 }
 
-#gallery {
+header h1 {
+  margin: 0;
+  font-size: 28px;
+}
+
+nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
   display: flex;
-  transition: transform 0.5s ease-in-out;
+  justify-content: center;
+  gap: 20px;
 }
 
-.page {
-  flex: 0 0 100%;
+nav a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+nav a:hover {
+  text-decoration: underline;
+}
+
+.container,
+.container2,
+.container3 {
+  max-width: 700px;
+  width: 90%;
+  padding: 20px;
+  margin: 0 auto;
+  /* Centers containers horizontally */
+  text-align: center;
+}
+
+text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  margin: 12px;
+}
+
+canvas {
+  width: 100%;
+  height: auto;
+  max-height: 500px;
+  margin: 20px 0;
+  border-radius: 10px;
+  background-color: rgb(20, 10, 10);
+}
+
+a {
+  color: #00bcd4;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+footer {
+  color: black;
+  display: flex;
+  justify-content: center;
 }
