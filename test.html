@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rive Interactive Portfolio</title>
+    <!-- External Library: Hammer.js for touch gestures -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+    <!-- Rive Library -->
+    <script src="https://unpkg.com/@rive-app/canvas@2.9.1"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #111;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* Header Styles */
+        header {
+            background: #111;
+            color: #fff;
+            padding: 15px 20px;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            border-bottom: 2px solid #333;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 28px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0 0;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        nav a:hover, nav a.active {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            text-decoration: none;
+        }
+
+        /* Main Container */
+        .main-container {
+            margin-top: 120px;
+            margin-bottom: 60px;
+            min-height: calc(100vh - 180px);
+        }
+
+        /* Page Slideshow Container */
+        .page-slideshow-container {
+            position: relative;
+            width: 100%;
+            height: calc(100vh - 180px);
+            overflow: hidden;
+        }
+
+        .pages-wrapper {
+            display: flex;
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            height: 100%;
+        }
+
+        .page {
+            min-width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* Individual Page Styles */
+        .page-content {
+            max-width: 800px;
+            width: 90%;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: slideInUp 0.8s ease-out forwards;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .page h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page p {
+            font-size: 1.2rem;
+            color: #ccc;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        /* Canvas Styles */
+        canvas {
+            width: 100%;
+            max-width: 600px;
+            height: 400px;
+            margin: 20px 0;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 2px solid #333;
+        }
+
+        /* Swipe Animation Styles */
+        .swipe-animations {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            width: 100%;
+            max-width: 700px;
+        }
+
+        .animation-slide {
+            opacity: 0;
+            transform: translateX(100px);
+            transition: all 0.8s ease-out;
+        }
+
+        .animation-slide.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .animation-slide.prev {
+            opacity: 0;
+            transform: translateX(-100px);
+        }
+
+        .animation-slide.next {
+            opacity: 0;
+            transform: translateX(100px);
+        }
+
+        /* Navigation Dots */
+        .dots-container {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dot.active {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            transform: scale(1.2);
+        }
+
+        /* Swipe Indicator */
+        .swipe-indicator {
+            position: absolute;
+            top: 50%;
+            right: 30px;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1rem;
+            animation: pulse 2s infinite;
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+        }
+
+        /* Footer */
+        footer {
+            background: #111;
+            color: #fff;
+            text-align: center;
+            padding: 20px;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            border-top: 2px solid #333;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 24px;
+            }
+
+            nav ul {
+                gap: 10px;
+            }
+
+            nav a {
+                font-size: 14px;
+                padding: 3px 6px;
+            }
+
+            .page h2 {
+                font-size: 2rem;
+            }
+
+            .page p {
+                font-size: 1rem;
+            }
+
+            canvas {
+                height: 300px;
+            }
+
+            .swipe-indicator {
+                right: 15px;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-container {
+                margin-top: 140px;
+            }
+
+            .page {
+                padding: 10px;
+            }
+
+            .page h2 {
+                font-size: 1.5rem;
+            }
+
+            canvas {
+                height: 250px;
+            }
+        }
+
+        /* Loading Animation */
+        .loading-canvas {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-style: italic;
+        }
+
+        /* Error State */
+        .error-canvas {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ff6b6b;
+            flex-direction: column;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header with Navigation -->
+    <header>
+        <h1>🎨 Rive Interactive Portfolio</h1>
+        <nav>
+            <ul id="navList">
+                <li><a href="#" onclick="goToPage(0)" class="nav-link active">Home</a></li>
+                <li><a href="#" onclick="goToPage(1)" class="nav-link">Animations</a></li>
+                <li><a href="#" onclick="goToPage(2)" class="nav-link">Characters</a></li>
+                <li><a href="#" onclick="goToPage(3)" class="nav-link">UI Elements</a></li>
+                <li><a href="#" onclick="goToPage(4)" class="nav-link">Games</a></li>
+                <li><a href="#" onclick="goToPage(5)" class="nav-link">Illustrations</a></li>
+                <li><a href="#" onclick="goToPage(6)" class="nav-link">Interactive</a></li>
+                <li><a href="#" onclick="goToPage(7)" class="nav-link">Showcase</a></li>
+                <li><a href="#" onclick="goToPage(8)" class="nav-link">Experiments</a></li>
+                <li><a href="#" onclick="goToPage(9)" class="nav-link">Gallery</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <div class="page-slideshow-container" id="pageSlideshow">
+            <div class="pages-wrapper" id="pagesWrapper">
+                
+                <!-- Page 1: Home with Swipeable Animations -->
+                <div class="page">
+                    <div class="page-content">
+                        <h2>Welcome to Rive Showcase</h2>
+                        <p>Swipe through these amazing animations or use the navigation above to explore different categories</p>
+                        <div class="swipe-animations" id="homeAnimations">
+                            <div class="animation-slide active">
+                                <h3>Spider Animation</h3>
+                                <canvas id="riveCanvas1"></canvas>
+                            </div>
+                            <div class="animation-slide next">
+                                <h3>Restaurant Scene</h3>
+                                <canvas id="riveCanvas2"></canvas>
+                            </div>
+                            <div class="animation-slide next">
+                                <h3>Warm Party</h3>
+                                <canvas id="riveCanvas3"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Page 2: Animations -->
+                <div class="page">
+                    <div class="page-content">
+                        <h2>Animation Collection</h2>
+                        <p>Explore our curated collection of smooth animations</p>
+                        <canvas id="riveCanvas4"></canvas>
+                    </div>
+                </div>
+
+                <!-- Page 3: Characters -->
+                <div class="page">
+                    <div class="page-content">
+                        <h2>Character Designs</h2>
+                        <p>Meet our animated characters with personality</p>
+                        <canvas id="riveCanvas5"></canvas>
+                    </div>
+                </div>
+
+                <!-- Page 4: UI Elements -->
+                <div class="page">
+                    <div class="page-content">
+                        <h2>UI Components</h2>
+                        <p>Interactive user interface elements and micro-interactions</p>
+                        <canvas id="riveCanvas6"></canvas>
+                    </div>
+                </div>
+
+                <!-- Page 5: Games -->
+                <div class="page">
+                    <div class="page-content">
+                        <h2>Game Assets</h2>
+                        <p>Game-ready animations and interactive elements</p>
+                        <canvas id="riveCanvas7"></canvas>
+                    </div>
+                </div>
+
+                <!-- Page 6: Illustrations -->
+                <div class="page">
+                    <div class="page-content">
+                        <h2>Illustrated Scenes</h2>
+                        <p>Beautiful illustrated animations and scenes</p>
+                        <canvas id="riveCanvas8"></canvas>
+                    </div>
+                </div>
+
+                <!-- Page 7: Interactive -->
+                <div class="page">
+                    <div class="page-content">
+                        <h2>Interactive Demos</h2>
+                        <p>Click, hover, and interact with these animations</p>
+                        <canvas id="riveCanvas9"></canvas>
+                    </div>
+                </div>
+
+                <!-- Page 8: Showcase -->
+                <div class="page">
+                    <div class="page-content">
+                        <h2>Featured Showcase</h2>
+                        <p>Our best and most impressive animations</p>
+                        <canvas id="riveCanvas10"></canvas>
+                    </div>
+                </div>
+
+                <!-- Page 9: Experiments -->
+                <div class="page">
+                    <div class="page-content">
+                        <h2>Creative Experiments</h2>
+                        <p>Experimental and innovative animation techniques</p>
+                        <canvas id="riveCanvas11"></canvas>
+                    </div>
+                </div>
+
+                <!-- Page 10: Gallery -->
+                <div class="page">
+                    <div class="page-content">
+                        <h2>Animation Gallery</h2>
+                        <p>A comprehensive gallery of all our work</p>
+                        <canvas id="riveCanvas12"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Navigation Dots -->
+            <div class="dots-container" id="dotsContainer"></div>
+
+            <!-- Swipe Indicator -->
+            <div class="swipe-indicator">
+                👈 Swipe 👉
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>© 2025 Emantrana Motion Design | Built with Rive & JavaScript</p>
+    </footer>
+
+    <script>
+        
+        const riveFilePaths = {
+            // Home page animations (your existing files)
+            spider: "assets/rive/animate_spider.riv",
+            restaurant: "assets/rive/restaurants.riv", 
+            warmparty: "assets/rive/warmparty.riv",
+            
+            // Additional animations - ADD YOUR NEW .RIV FILES HERE
+            animation4: "assets/rive/your_animation_4.riv",
+            animation5: "assets/rive/your_animation_5.riv",
+            animation6: "assets/rive/your_animation_6.riv",
+            animation7: "assets/rive/your_animation_7.riv",
+            animation8: "assets/rive/your_animation_8.riv",
+            animation9: "assets/rive/your_animation_9.riv",
+            animation10: "assets/rive/your_animation_10.riv",
+            animation11: "assets/rive/your_animation_11.riv",
+            animation12: "assets/rive/your_animation_12.riv"
+        };
+
+       
+        let currentPage = 0;
+        let currentHomeAnimation = 0;
+        const totalPages = 10;
+        const totalHomeAnimations = 3;
+        const riveInstances = {};
+
+        // Initialize page slideshow
+        function initializePageSlideshow() {
+            const pagesWrapper = document.getElementById('pagesWrapper');
+            const dotsContainer = document.getElementById('dotsContainer');
+
+            // Create navigation dots
+            for (let i = 0; i < totalPages; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'dot';
+                if (i === 0) dot.classList.add('active');
+                dot.addEventListener('click', () => goToPage(i));
+                dotsContainer.appendChild(dot);
+            }
+
+            // Initialize Hammer.js for page swiping
+            const slideshow = document.getElementById('pageSlideshow');
+            const hammer = new Hammer(slideshow);
+            hammer.get('pan').set({ direction: Hammer.DIRECTION_HORIZONTAL });
+
+            hammer.on('panend', function(e) {
+                if (e.deltaX > 50 && currentPage > 0) {
+                    goToPage(currentPage - 1);
+                } else if (e.deltaX < -50 && currentPage < totalPages - 1) {
+                    goToPage(currentPage + 1);
+                }
+            });
+
+            // Initialize home page animation swiping
+            initializeHomeAnimationSwipe();
+        }
+
+        // Initialize home page animation swiping
+        function initializeHomeAnimationSwipe() {
+            const homeAnimations = document.getElementById('homeAnimations');
+            if (homeAnimations) {
+                const hammer = new Hammer(homeAnimations);
+                hammer.get('pan').set({ direction: Hammer.DIRECTION_HORIZONTAL });
+
+                hammer.on('panend', function(e) {
+                    if (currentPage === 0) { // Only on home page
+                        if (e.deltaX > 50 && currentHomeAnimation > 0) {
+                            switchHomeAnimation(currentHomeAnimation - 1);
+                        } else if (e.deltaX < -50 && currentHomeAnimation < totalHomeAnimations - 1) {
+                            switchHomeAnimation(currentHomeAnimation + 1);
+                        }
+                    }
+                });
+            }
+        }
+
+        // Switch between home page animations
+        function switchHomeAnimation(index) {
+            const slides = document.querySelectorAll('.animation-slide');
+            
+            slides.forEach((slide, i) => {
+                slide.classList.remove('active', 'prev', 'next');
+                if (i === index) {
+                    slide.classList.add('active');
+                } else if (i < index) {
+                    slide.classList.add('prev');
+                } else {
+                    slide.classList.add('next');
+                }
+            });
+
+            currentHomeAnimation = index;
+        }
+
+        // Navigate to specific page
+        function goToPage(pageIndex) {
+            if (pageIndex < 0 || pageIndex >= totalPages) return;
+
+            currentPage = pageIndex;
+            const pagesWrapper = document.getElementById('pagesWrapper');
+            const translateX = -currentPage * 100;
+            pagesWrapper.style.transform = `translateX(${translateX}%)`;
+
+            // Update navigation
+            updateNavigation();
+            updateDots();
+
+            // Load Rive animation for current page if not already loaded
+            loadRiveForPage(pageIndex);
+        }
+
+        // Update navigation active state
+        function updateNavigation() {
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach((link, index) => {
+                link.classList.toggle('active', index === currentPage);
+            });
+        }
+
+        // Update dots active state
+        function updateDots() {
+            const dots = document.querySelectorAll('.dot');
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentPage);
+            });
+        }
+
+        // Load Rive animation for specific page
+        function loadRiveForPage(pageIndex) {
+            const canvasId = `riveCanvas${pageIndex + 1}`;
+            const canvas = document.getElementById(canvasId);
+            
+            if (!canvas) return;
+
+            // Don't reload if already loaded
+            if (riveInstances[canvasId]) return;
+
+            // Show loading state
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading-canvas';
+            loadingDiv.innerHTML = '⏳ Loading animation...';
+            loadingDiv.style.width = canvas.style.width;
+            loadingDiv.style.height = canvas.style.height;
+            canvas.parentNode.insertBefore(loadingDiv, canvas);
+            canvas.style.display = 'none';
+
+            // Determine which Rive file to load
+            let rivePath;
+            switch(pageIndex) {
+                case 0: // Home page has multiple animations, load all
+                    loadHomePageAnimations();
+                    return;
+                case 1:
+                    rivePath = riveFilePaths.animation4;
+                    break;
+                case 2:
+                    rivePath = riveFilePaths.animation5;
+                    break;
+                case 3:
+                    rivePath = riveFilePaths.animation6;
+                    break;
+                case 4:
+                    rivePath = riveFilePaths.animation7;
+                    break;
+                case 5:
+                    rivePath = riveFilePaths.animation8;
+                    break;
+                case 6:
+                    rivePath = riveFilePaths.animation9;
+                    break;
+                case 7:
+                    rivePath = riveFilePaths.animation10;
+                    break;
+                case 8:
+                    rivePath = riveFilePaths.animation11;
+                    break;
+                case 9:
+                    rivePath = riveFilePaths.animation12;
+                    break;
+            }
+
+            // Load the Rive animation
+            try {
+                riveInstances[canvasId] = new rive.Rive({
+                    src: rivePath,
+                    canvas: canvas,
+                    autoplay: true,
+                    onLoad: () => {
+                        canvas.style.display = 'block';
+                        loadingDiv.remove();
+                        console.log(`Loaded: ${rivePath}`);
+                    },
+                    onLoadError: (error) => {
+                        console.error(`Failed to load ${rivePath}:`, error);
+                        loadingDiv.innerHTML = `❌ Failed to load animation<br><small>${rivePath}</small>`;
+                        loadingDiv.className = 'error-canvas';
+                    }
+                });
+            } catch (error) {
+                console.error(`Error creating Rive instance for ${rivePath}:`, error);
+                loadingDiv.innerHTML = `❌ Error loading animation<br><small>Check file path and format</small>`;
+                loadingDiv.className = 'error-canvas';
+            }
+        }
+
+        // Load home page animations
+        function loadHomePageAnimations() {
+            const homeCanvases = ['riveCanvas1', 'riveCanvas2', 'riveCanvas3'];
+            const homePaths = [riveFilePaths.spider, riveFilePaths.restaurant, riveFilePaths.warmparty];
+
+            homeCanvases.forEach((canvasId, index) => {
+                if (riveInstances[canvasId]) return;
+
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return;
+
+                try {
+                    riveInstances[canvasId] = new rive.Rive({
+                        src: homePaths[index],
+                        canvas: canvas,
+                        autoplay: true,
+                        onLoad: () => {
+                            console.log(`Loaded home animation: ${homePaths[index]}`);
+                        },
+                        onLoadError: (error) => {
+                            console.error(`Failed to load ${homePaths[index]}:`, error);
+                        }
+                    });
+                } catch (error) {
+                    console.error(`Error creating Rive instance for ${homePaths[index]}:`, error);
+                }
+            });
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft' && currentPage > 0) {
+                goToPage(currentPage - 1);
+            } else if (e.key === 'ArrowRight' && currentPage < totalPages - 1) {
+                goToPage(currentPage + 1);
+            } else if (e.key === 'ArrowUp' && currentPage === 0 && currentHomeAnimation > 0) {
+                switchHomeAnimation(currentHomeAnimation - 1);
+            } else if (e.key === 'ArrowDown' && currentPage === 0 && currentHomeAnimation < totalHomeAnimations - 1) {
+                switchHomeAnimation(currentHomeAnimation + 1);
+            }
+        });
+
+        // Initialize everything when DOM loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePageSlideshow();
+            loadRiveForPage(0); // Load home page animations
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            // Recalculate positions if needed
+            const pagesWrapper = document.getElementById('pagesWrapper');
+            if (pagesWrapper) {
+                const translateX = -currentPage * 100;
+                pagesWrapper.style.transform = `translateX(${translateX}%)`;
+            }
+        });
+    </script>
+</body>
+</html>
